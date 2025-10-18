@@ -1,6 +1,6 @@
 {
   "name": "Snapcast",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "init": false,
   "stage": "experimental",
   "slug": "snapcast",
