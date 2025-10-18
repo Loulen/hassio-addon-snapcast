@@ -28,7 +28,13 @@
       "librespot_killall": false,
       "librespot_disable_audio_cache": false,
       "librespot_params": "",
-      "librespot_extra_params": ""
+      "librespot_extra_params": "",
+      "enable_stream_tcp": false,
+      "tcp_bind_address": "0.0.0.0",
+      "tcp_port": 4953,
+      "tcp_name": "TCP",
+      "tcp_mode": "server",
+      "custom_streams": ""
     },
     "client": {
       "enable": false,
@@ -50,6 +56,11 @@
       "librespot_disable_audio_cache": "bool?",
       "librespot_params": "str?",
       "librespot_extra_params": "str?",
+      "enable_stream_tcp": "bool",
+      "tcp_bind_address": "str?",
+      "tcp_port": "port?",
+      "tcp_name": "str?",
+      "tcp_mode": "list(server|client)?",
       "custom_streams": "str?"
     },
     "client": {

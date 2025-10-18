@@ -19,16 +19,23 @@ The following configuration options exists
 ### Server
 - `enable`: true|false (Shall the snapcast server be enabled or not)
 - `enable_web`: true|false (Shall the web interface be enabled or not)
-- `enable_stream_librespot`: true|false (Shall spotify be enabled or not)
-- `librespot_name:` The name of the spotify service
-- `librespot_device_name`: The name to present in spotify connect
+- `enable_stream_librespot`: true|false (Enable Spotify via librespot)
+- `librespot_name:` The name of the Spotify service
+- `librespot_device_name`: The name to present in Spotify Connect
 - `librespot_initial_volume`: Initial volume in (0-100)%
 - `librespot_bitrate`: Bitrate (96|160|320)
-- `librespot_normalize`: true|false (Use spotify's normalization or not)
-- `librespot_killall`: true|false 
+- `librespot_normalize`: true|false (Use Spotify's normalization or not)
+- `librespot_killall`: true|false
 - `librespot_disable_audio_cache`: true|false
 - `librespot_params`: Any extra parameters for this stream.
 - `librespot_extra_params`: Any extra parameters to send to librespot.
+
+- `enable_stream_tcp`: true|false (Enable a TCP stream source)
+- `tcp_bind_address`: Bind address for the TCP source (default `0.0.0.0`)
+- `tcp_port`: Port for the TCP source (default `4953`)
+- `tcp_name`: Stream name for the TCP source (default `TCP`)
+- `tcp_mode`: Optional mode for TCP source (`server|client`), if omitted Snapserver default is used
+- `custom_streams`: Newline-separated raw lines appended under the `[stream]` section (e.g. `source = tcp://0.0.0.0:4953?name=tcp_global`)
 
 ### Client
 - `enable`: true|false (Shall the snapcast client be enabled or not)

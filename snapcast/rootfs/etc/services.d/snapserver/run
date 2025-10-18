@@ -41,6 +41,7 @@ if ! bashio::config.true 'server.enable'; then
 fi
 
 bashio::log.info 'Starting the Snapcast server...'
+STREAMS=""
 
 if bashio::config.true 'server.enable_stream_librespot' ; then
     declare -A PARAMS
@@ -61,11 +62,42 @@ if bashio::config.true 'server.enable_stream_librespot' ; then
     bashio::config.has_value "server.librespot_extra_params" && extra_params="&$(bashio::config server.librespot_extra_params)"
 
     # TODO: add custom_streams
-    STREAMS="source = librespot:///usr/bin/librespot?name=$(getval 'librespot_name')&devicename=$(getval 'librespot_device_name')&bitrate=$(getval 'librespot_bitrate')&volume=$(getval 'librespot_initial_volume')&normalize=$(getval 'librespot_normalize')&disable_audio_cache=$(getval 'librespot_disable_audio_cache')${extra_params}${params}"
+    STREAMS+="source = librespot:///usr/bin/librespot?name=$(getval 'librespot_name')&devicename=$(getval 'librespot_device_name')&bitrate=$(getval 'librespot_bitrate')&volume=$(getval 'librespot_initial_volume')&normalize=$(getval 'librespot_normalize')&disable_audio_cache=$(getval 'librespot_disable_audio_cache')${extra_params}${params}\n"
+fi
+
+# Add TCP stream source if enabled
+if bashio::config.true 'server.enable_stream_tcp' ; then
+    tcp_bind="$(bashio::config 'server.tcp_bind_address')"
+    [[ -z "$tcp_bind" ]] && tcp_bind="0.0.0.0"
+
+    tcp_port="$(bashio::config 'server.tcp_port')"
+    [[ -z "$tcp_port" ]] && tcp_port="4953"
+
+    tcp_name="$(bashio::config 'server.tcp_name')"
+    if [[ -z "$tcp_name" ]]; then
+        tcp_name_enc="$(rawurlencode "TCP")"
+    else
+        tcp_name_enc="$(rawurlencode "$tcp_name")"
+    fi
+
+    tcp_mode="$(bashio::config 'server.tcp_mode')"
+    mode_part=""
+    if bashio::config.has_value 'server.tcp_mode'; then
+        mode_part="&mode=${tcp_mode}"
+    fi
+
+    STREAMS+="source = tcp://${tcp_bind}:${tcp_port}?name=${tcp_name_enc}${mode_part}\n"
+fi
+
+# Append any custom streams verbatim (newline-preserving)
+if bashio::config.has_value 'server.custom_streams'; then
+    custom_streams="$(bashio::config 'server.custom_streams')"
+    STREAMS+="${custom_streams}\n"
 fi
 
 echo "[stream]" > "$config_file"
-echo "$STREAMS" >> "$config_file"
+# Write all collected stream lines
+printf "%b" "$STREAMS" >> "$config_file"
 echo "" >> "$config_file"
 
 # activate web server?
