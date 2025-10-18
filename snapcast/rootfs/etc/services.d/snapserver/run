@@ -42,7 +42,7 @@ fi
 
 bashio::log.info 'Starting the Snapcast server...'
 # Increase snapserver verbosity via CLI
-options+=("--logfilter" "*:info")
+options+=("--logfilter" "*:debug")
 # Log key toggles at startup
 bashio::log.info "Config toggles: enable=$(bashio::config.true 'server.enable' && echo true || echo false), enable_web=$(bashio::config.true 'server.enable_web' && echo true || echo false), enable_stream_librespot=$(bashio::config.true 'server.enable_stream_librespot' && echo true || echo false), enable_stream_tcp=$(bashio::config.true 'server.enable_stream_tcp' && echo true || echo false)"
 declare -a streams
@@ -124,11 +124,21 @@ if bashio::config.true 'server.enable_web' ; then
 fi
 
 conf="$(cat "$config_file")"
-bashio::log.debug "Snapcast server compiled config file: $conf"
+bashio::log.info "Snapcast server compiled config file:"
+bashio::log.info "$conf"
 
-# Remove warnings that happen a lot in the log
-exec > >(fgrep -v ":5353: type 47 is invalid")
+# Note: disabled stdout filter to avoid losing snapserver output during debugging
+# exec > >(fgrep -v ":5353: type 47 is invalid")
 
-# Start the Snapcast server
+# Start the Snapcast server (with diagnostics)
+bashio::log.info "Binary diagnostics:"
+bashio::log.info "snapserver --version:"
+/usr/bin/snapserver --version 2>&1 | sed 's/^/version: /' || true
+bashio::log.info "ldd /usr/bin/snapserver:"
+ldd /usr/bin/snapserver 2>&1 | sed 's/^/ldd: /' || true
+
 bashio::log.info "Exec: /usr/bin/snapserver ${options[*]}"
-exec /usr/bin/snapserver "${options[@]}" < /dev/null
+/usr/bin/snapserver "${options[@]}" < /dev/null
+rc=$?
+bashio::log.info "Snapserver exited with code: ${rc}"
+exit ${rc}
