@@ -1,17 +1,28 @@
-ARG BUILD_FROM
-FROM $BUILD_FROM
+FROM ghcr.io/linuxserver/baseimage-alpine:edge
 
-ENV LANG C.UTF-8
+# set version label
+ARG BUILD_DATE
+ARG VERSION
+LABEL build_version="version:- ${VERSION} Build-date:- ${BUILD_DATE}"
+LABEL maintainer="llenoir"
+
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
+RUN set -ex \
+  echo "**** setup apk testing mirror ****" \
+  && echo "@testing http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
+  && cat /etc/apk/repositories \
+  && echo "**** install runtime packages ****" \
+  && apk add --no-cache -U --upgrade \
+    alsa-utils \
+    librespot@testing \
+    shairport-sync@testing \
+    snapcast \
+  && echo "**** cleanup ****" \
+  && rm -rf \
+    /tmp/*
+
+
 # Copy data for add-on
 COPY rootfs /
-
-RUN apk update
-RUN apk add --no-cache \
-    snapcast snapcast-server snapcast-client \
-    librespot \
-    alsa-plugins-pulse
-#RUN apk add --no-cache neovim screen
-
