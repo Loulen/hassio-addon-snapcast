@@ -41,7 +41,7 @@ if ! bashio::config.true 'server.enable'; then
 fi
 
 bashio::log.info 'Starting the Snapcast server...'
-STREAMS=""
+declare -a streams
 
 if bashio::config.true 'server.enable_stream_librespot' ; then
     declare -A PARAMS
@@ -62,7 +62,7 @@ if bashio::config.true 'server.enable_stream_librespot' ; then
     bashio::config.has_value "server.librespot_extra_params" && extra_params="&$(bashio::config server.librespot_extra_params)"
 
     # TODO: add custom_streams
-    STREAMS+="source = librespot:///usr/bin/librespot?name=$(getval 'librespot_name')&devicename=$(getval 'librespot_device_name')&bitrate=$(getval 'librespot_bitrate')&volume=$(getval 'librespot_initial_volume')&normalize=$(getval 'librespot_normalize')&disable_audio_cache=$(getval 'librespot_disable_audio_cache')${extra_params}${params}\n"
+    streams+=("source = librespot:///usr/bin/librespot?name=$(getval 'librespot_name')&devicename=$(getval 'librespot_device_name')&bitrate=$(getval 'librespot_bitrate')&volume=$(getval 'librespot_initial_volume')&normalize=$(getval 'librespot_normalize')&disable_audio_cache=$(getval 'librespot_disable_audio_cache')${extra_params}${params}")
 fi
 
 # Add TCP stream source if enabled
@@ -86,18 +86,22 @@ if bashio::config.true 'server.enable_stream_tcp' ; then
         mode_part="&mode=${tcp_mode}"
     fi
 
-    STREAMS+="source = tcp://${tcp_bind}:${tcp_port}?name=${tcp_name_enc}${mode_part}\n"
+    streams+=("source = tcp://${tcp_bind}:${tcp_port}?name=${tcp_name_enc}${mode_part}")
 fi
 
 # Append any custom streams verbatim (newline-preserving)
 if bashio::config.has_value 'server.custom_streams'; then
     custom_streams="$(bashio::config 'server.custom_streams')"
-    STREAMS+="${custom_streams}\n"
+    while IFS= read -r line; do
+        streams+=("$line")
+    done <<< "$custom_streams"
 fi
 
 echo "[stream]" > "$config_file"
 # Write all collected stream lines
-printf "%b" "$STREAMS" >> "$config_file"
+for line in "${streams[@]}"; do
+    echo "$line" >> "$config_file"
+done
 echo "" >> "$config_file"
 
 # activate web server?
