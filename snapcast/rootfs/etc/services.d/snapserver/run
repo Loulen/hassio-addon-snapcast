@@ -41,6 +41,10 @@ if ! bashio::config.true 'server.enable'; then
 fi
 
 bashio::log.info 'Starting the Snapcast server...'
+# Increase snapserver verbosity via CLI
+options+=("--logfilter" "*:info")
+# Log key toggles at startup
+bashio::log.info "Config toggles: enable=$(bashio::config.true 'server.enable' && echo true || echo false), enable_web=$(bashio::config.true 'server.enable_web' && echo true || echo false), enable_stream_librespot=$(bashio::config.true 'server.enable_stream_librespot' && echo true || echo false), enable_stream_tcp=$(bashio::config.true 'server.enable_stream_tcp' && echo true || echo false)"
 declare -a streams
 
 if bashio::config.true 'server.enable_stream_librespot' ; then
@@ -62,7 +66,10 @@ if bashio::config.true 'server.enable_stream_librespot' ; then
     bashio::config.has_value "server.librespot_extra_params" && extra_params="&$(bashio::config server.librespot_extra_params)"
 
     # TODO: add custom_streams
-    streams+=("source = librespot:///usr/bin/librespot?name=$(getval 'librespot_name')&devicename=$(getval 'librespot_device_name')&bitrate=$(getval 'librespot_bitrate')&volume=$(getval 'librespot_initial_volume')&normalize=$(getval 'librespot_normalize')&disable_audio_cache=$(getval 'librespot_disable_audio_cache')${extra_params}${params}")
+    bashio::log.info "Librespot params: bitrate=$(getval 'librespot_bitrate'), volume=$(getval 'librespot_initial_volume'), normalize=$(getval 'librespot_normalize'), disable_audio_cache=$(getval 'librespot_disable_audio_cache'), extra_params='${extra_params}', params='${params}'"
+    local_librespot_line="source = librespot:///usr/bin/librespot?name=$(getval 'librespot_name')&devicename=$(getval 'librespot_device_name')&bitrate=$(getval 'librespot_bitrate')&volume=$(getval 'librespot_initial_volume')&normalize=$(getval 'librespot_normalize')&disable_audio_cache=$(getval 'librespot_disable_audio_cache')${extra_params}${params}"
+    bashio::log.info "Librespot source line: ${local_librespot_line}"
+    streams+=("${local_librespot_line}")
 fi
 
 # Add TCP stream source if enabled
@@ -86,17 +93,23 @@ if bashio::config.true 'server.enable_stream_tcp' ; then
         mode_part="&mode=${tcp_mode}"
     fi
 
-    streams+=("source = tcp://${tcp_bind}:${tcp_port}?name=${tcp_name_enc}${mode_part}")
+    bashio::log.info "TCP params: bind='${tcp_bind}', port='${tcp_port}', name_raw='${tcp_name}', mode='${tcp_mode}'"
+    local_tcp_line="source = tcp://${tcp_bind}:${tcp_port}?name=${tcp_name_enc}${mode_part}"
+    bashio::log.info "TCP source line: ${local_tcp_line}"
+    streams+=("${local_tcp_line}")
 fi
 
 # Append any custom streams verbatim (newline-preserving)
 if bashio::config.has_value 'server.custom_streams'; then
     custom_streams="$(bashio::config 'server.custom_streams')"
+    bashio::log.info "Custom streams provided:"
+    bashio::log.info "$custom_streams"
     while IFS= read -r line; do
         streams+=("$line")
     done <<< "$custom_streams"
 fi
 
+bashio::log.info "Number of stream lines to write: ${#streams[@]}"
 echo "[stream]" > "$config_file"
 # Write all collected stream lines
 for line in "${streams[@]}"; do
@@ -117,4 +130,5 @@ bashio::log.debug "Snapcast server compiled config file: $conf"
 exec > >(fgrep -v ":5353: type 47 is invalid")
 
 # Start the Snapcast server
-exec /usr/bin/snapserver "${options[@]}" < /dev/null 
+bashio::log.info "Exec: /usr/bin/snapserver ${options[*]}"
+exec /usr/bin/snapserver "${options[@]}" < /dev/null
