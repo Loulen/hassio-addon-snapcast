@@ -1,7 +1,7 @@
 ARG BUILD_FROM
 FROM $BUILD_FROM
 
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -11,7 +11,8 @@ COPY rootfs /
 RUN apk update
 RUN apk add --no-cache openrc
 RUN apk add --no-cache snapcast snapcast-server snapcast-client
-RUN apk add --no-cache librespot
+# librespot not available in Alpine v3.16 base repositories; omitted.
+# If present in image (/usr/bin/librespot), the run script will enable it.
 RUN apk add --no-cache alsa-plugins-pulse
 #RUN apk add --no-cache neovim screen
 

@@ -48,28 +48,32 @@ bashio::log.info "Config toggles: enable=$(bashio::config.true 'server.enable' &
 declare -a streams
 
 if bashio::config.true 'server.enable_stream_librespot' ; then
-    declare -A PARAMS
-    PARAMS["librespot_name"]="Spotify"
-    PARAMS["librespot_device_name"]="Snapcast"
-    PARAMS["librespot_initial_volume"]="100"
-    PARAMS["librespot_bitrate"]="320"
-    PARAMS["librespot_normalize"]="false"
-    PARAMS["librespot_killall"]="false"
-    PARAMS["librespot_disable_audio_cache"]="false"
-    PARAMS["librespot_params"]=""
-    PARAMS["librespot_extra_params"]=""
-    
-    params=""
-    extra_params=""
-
-    bashio::config.has_value "server.librespot_params" && params="&params=$(rawurlencode $(bashio::config server.librespot_params))"
-    bashio::config.has_value "server.librespot_extra_params" && extra_params="&$(bashio::config server.librespot_extra_params)"
-
-    # TODO: add custom_streams
-    bashio::log.info "Librespot params: bitrate=$(getval 'librespot_bitrate'), volume=$(getval 'librespot_initial_volume'), normalize=$(getval 'librespot_normalize'), disable_audio_cache=$(getval 'librespot_disable_audio_cache'), extra_params='${extra_params}', params='${params}'"
-    local_librespot_line="source = librespot:///usr/bin/librespot?name=$(getval 'librespot_name')&devicename=$(getval 'librespot_device_name')&bitrate=$(getval 'librespot_bitrate')&volume=$(getval 'librespot_initial_volume')&normalize=$(getval 'librespot_normalize')&disable_audio_cache=$(getval 'librespot_disable_audio_cache')${extra_params}${params}"
-    bashio::log.info "Librespot source line: ${local_librespot_line}"
-    streams+=("${local_librespot_line}")
+    if [[ -x "/usr/bin/librespot" ]]; then
+        declare -A PARAMS
+        PARAMS["librespot_name"]="Spotify"
+        PARAMS["librespot_device_name"]="Snapcast"
+        PARAMS["librespot_initial_volume"]="100"
+        PARAMS["librespot_bitrate"]="320"
+        PARAMS["librespot_normalize"]="false"
+        PARAMS["librespot_killall"]="false"
+        PARAMS["librespot_disable_audio_cache"]="false"
+        PARAMS["librespot_params"]=""
+        PARAMS["librespot_extra_params"]=""
+        
+        params=""
+        extra_params=""
+ 
+        bashio::config.has_value "server.librespot_params" && params="&params=$(rawurlencode $(bashio::config server.librespot_params))"
+        bashio::config.has_value "server.librespot_extra_params" && extra_params="&$(bashio::config server.librespot_extra_params)"
+ 
+        # TODO: add custom_streams
+        bashio::log.info "Librespot params: bitrate=$(getval 'librespot_bitrate'), volume=$(getval 'librespot_initial_volume'), normalize=$(getval 'librespot_normalize'), disable_audio_cache=$(getval 'librespot_disable_audio_cache'), extra_params='${extra_params}', params='${params}'"
+        local_librespot_line="source = librespot:///usr/bin/librespot?name=$(getval 'librespot_name')&devicename=$(getval 'librespot_device_name')&bitrate=$(getval 'librespot_bitrate')&volume=$(getval 'librespot_initial_volume')&normalize=$(getval 'librespot_normalize')&disable_audio_cache=$(getval 'librespot_disable_audio_cache')${extra_params}${params}"
+        bashio::log.info "Librespot source line: ${local_librespot_line}"
+        streams+=("${local_librespot_line}")
+    else
+        bashio::log.warning "Librespot stream enabled but /usr/bin/librespot is not present. Skipping librespot source."
+    fi
 fi
 
 # Add TCP stream source if enabled
